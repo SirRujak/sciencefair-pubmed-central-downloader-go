@@ -192,7 +192,6 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 	formatURL := "&format=tgz"
 	fullUpdateURL := updateURLBase + lastTimeFormatted + formatURL
 	log.Print("test2")
-	// TODO: Retrieve the XML update.
 	// If there is anything in the article list download them.
 	// Continue until the resumption link is nil.
 	var updateComplete bool = false
@@ -227,7 +226,6 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 		}
 		log.Print("test4")
 		for currentArticle := 0; currentArticle < numNewArticles; currentArticle++ {
-			// TODO: Download the article and save it.
 			//log.Print(update.Records.RecordList)
 			if update.Records.RecordList[currentArticle].Link.Format == "pdf" {
 				continue
