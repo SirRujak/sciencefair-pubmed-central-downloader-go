@@ -101,6 +101,18 @@
         "title": {
             "id": "/properties/title",
             "type": "string"
+        },
+        "path-type": {
+          "id": "/properties/path-type",
+          "description": "Indicates how the path stringe is formatted.",
+          "default": "concatenated",
+          "type": "string"
+        },
+        "compression-type": {
+          "id": "/properties/compression-type",
+          "description": "Indicates how the article is compressed.",
+          "default": "none",
+          "type": "string"
         }
     },
     "required": [

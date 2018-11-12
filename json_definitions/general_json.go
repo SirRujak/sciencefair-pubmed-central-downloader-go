@@ -1,15 +1,17 @@
 package json_definitions
 
 type Metadata struct {
-	Title      string     `json:"title"`
-	AuthorList []Author   `json:"author"`
-	Abstract   string     `json:"abstract"`
-	Identifier Identifier `json:"identifier"`
-	Date       Date       `json:"date"`
-	License    string     `json:"license"`
-	Path       string     `json:"path"`
-	EntryFile  string     `json:"entryfile"`
-	Files      []string   `json:"files"`
+	Title           string     `json:"title"`
+	AuthorList      []Author   `json:"author"`
+	Abstract        string     `json:"abstract"`
+	Identifier      Identifier `json:"identifier"`
+	Date            Date       `json:"date"`
+	License         string     `json:"license"`
+	Path            string     `json:"path"`
+	EntryFile       string     `json:"entryfile"`
+	Files           []string   `json:"files"`
+	PathType        string     `json:"path-type"`
+	CompressionType string     `json:"compression-type"`
 }
 
 type Author struct {
