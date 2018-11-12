@@ -407,6 +407,7 @@ func main() {
 	oafilesPath := path.Join(pwd, "oa_files")
 	configPath := path.Join(pwd, "config")
 	articleListingPath := path.Join(oafilesPath, "article_listing.csv")
+	log.Print(articleListingPath)
 	//var firstRun bool
 	//firstRun = false
 	var err error
@@ -450,7 +451,8 @@ func main() {
 	//if len(files) <= 0 || currentTime.Unix() > lastTime.Add(24*time.Hour).Unix() {
 	if len(files) <= 0 {
 		// Download new file.
-
+		//os.MkdirAll(path, perm)
+		log.Print(articleListingPath)
 		articleListing, err := os.OpenFile(articleListingPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0655)
 		if err != nil {
 			log.Print("Issue opening or creating article listing file. Permission error?")
@@ -469,7 +471,8 @@ func main() {
 	} else if currentTime.Unix() > lastTime.Add(24*time.Hour).Unix() {
 		// NEW STUFF
 		log.Print("Downloading because we do not yet have a file.")
-		articleListing, err := os.OpenFile(pwd+"oa_files/article_listing.csv", os.O_RDWR|os.O_APPEND, 0655)
+		tempPath := path.Join([]string{pwd, "oa_files", "article_listing.csv"}...)
+		articleListing, err := os.OpenFile(tempPath, os.O_RDWR|os.O_APPEND, 0655)
 		if err != nil {
 			log.Print("Issue opening article listing file. Permission error?")
 			panic(err)
