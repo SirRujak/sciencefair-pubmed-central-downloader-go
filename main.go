@@ -88,6 +88,7 @@ func readJSON(configPath string) (*config, error) {
 	jsonFile, err := os.Open(configPath)
 	if err != nil {
 		log.Print("unable to open json file to read")
+		log.Print(configPath)
 		return nil, errors.New("unable to open json file to read")
 	}
 	defer jsonFile.Close()
@@ -102,8 +103,8 @@ func readJSON(configPath string) (*config, error) {
 	return &loadedConfig, nil
 }
 
-func saveJSON(newConfig *config) error {
-	const configPath = "./config.json"
+func saveJSON(newConfig *config, configPath string) error {
+	//const configPath = "./config.json"
 	jsonString, err := json.Marshal(newConfig)
 	if err != nil {
 		log.Print("Unable to marshal config data.")
@@ -244,6 +245,7 @@ func downloadMetaDataXML(url string) (*xml_definitions.PubmedArticleSet, error) 
 	}
 
 	defer urlResponse.Body.Close()
+	log.Print(url)
 
 	// Read the data to a []char.
 	dataString, err := ioutil.ReadAll(urlResponse.Body)
@@ -252,21 +254,28 @@ func downloadMetaDataXML(url string) (*xml_definitions.PubmedArticleSet, error) 
 		return nil, err
 	}
 
+	log.Print(dataString)
+
 	// Parse the XML data.
 	pubMedMetadata := xml_definitions.PubmedArticleSet{}
-	xml.Unmarshal(dataString, pubMedMetadata)
+	err = xml.Unmarshal(dataString, &pubMedMetadata)
+	if err != nil {
+		log.Print("issue unmarshalling xml metadata")
+		log.Print(err)
+		return nil, err
+	}
+	log.Print(pubMedMetadata)
 
 	return &pubMedMetadata, nil
 }
 
 func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath string, metadataBasePath string, articleListing *os.File, emailAddress string) error {
 	var err error
-	const userInfo = "&tool=sciencefair_downloader&email="
-	metadataBaseLink := "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=XML&id=" + emailAddress
+	userInfo := "&tool=sciencefair_downloader&email=" + emailAddress
+	const metadataBaseLink = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=XML&id="
 	lastTimeFormatted := lastTime.Format("2006-01-02+15:04:05")
 	formatURL := "&format=tgz"
 	fullUpdateURL := updateURLBase + lastTimeFormatted + formatURL
-	log.Print("test2")
 	// If there is anything in the article list download them.
 	// Continue until the resumption link is nil.
 	var updateComplete = false
@@ -274,7 +283,6 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 	var numNewArticles int
 	for updateComplete != true {
 		var updateXML []byte
-		log.Print("test")
 		updateXML, err = downloadUpdateXML(fullUpdateURL)
 		if err != nil {
 			log.Print(err)
@@ -283,8 +291,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 
 		var update databaseUpdate
 		xml.Unmarshal(updateXML, &update)
-		log.Print("test3")
-		log.Print(update)
+		//log.Print(update)
 		if update.Records.Resumption == nil {
 			updateComplete = true
 		} else {
@@ -302,7 +309,6 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			log.Print("Somehow there were no new articles in this file. Terminating...")
 			return err
 		}
-		log.Print("test4")
 		for currentArticle := 0; currentArticle < numNewArticles; currentArticle++ {
 			//log.Print(update.Records.RecordList)
 			if update.Records.RecordList[currentArticle].Link.Format == "pdf" {
@@ -314,11 +320,9 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			metadataPMID := strings.Split(strings.Split(articleLinkFtp, "PMC")[1], ".")[0]
 			log.Print(articleList)
 			articleLinkHTTP := "http://" + articleList[2]
-			//log.Print("test6")
 			articleListHashes := strings.Split(articleList[2], "/")
 			firstHash := articleListHashes[4]
 			secondHash := articleListHashes[5]
-			//log.Print("test5")
 
 			articleDestination := []string{
 				articleBasePath,
@@ -346,7 +350,9 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			// Convert the downloaded data to the sciencefair JSON format.
 			// Start by filling in the defaults for this repository.
 			hashPath := path.Join(firstHash, secondHash)
-			metadataJSON, err := convertXMLToJSON(&(*articleMetadata.PubmedArticles)[0], hashPath)
+			log.Print(articleMetadata)
+			singleArticle := *articleMetadata.PubmedArticles
+			metadataJSON, err := convertXMLToJSON(&singleArticle[0], hashPath)
 			if err != nil {
 				log.Print("issue converting xml to json")
 				return err
@@ -405,7 +411,7 @@ func main() {
 	articleBasePath := path.Join(pwd, "articles")
 	metadataBasePath := path.Join(pwd, "metadata")
 	oafilesPath := path.Join(pwd, "oa_files")
-	configPath := path.Join(pwd, "config")
+	configPath := path.Join(pwd, "config.json")
 	articleListingPath := path.Join(oafilesPath, "article_listing.csv")
 	log.Print(articleListingPath)
 	//var firstRun bool
@@ -459,6 +465,8 @@ func main() {
 			panic(err)
 		}
 		defer articleListing.Close()
+
+		log.Print("Downloading because we do not yet have a file.")
 		/*
 			err = downloadXML(initialURL)
 			if err != nil {
@@ -470,7 +478,6 @@ func main() {
 		panic(err)
 	} else if currentTime.Unix() > lastTime.Add(24*time.Hour).Unix() {
 		// NEW STUFF
-		log.Print("Downloading because we do not yet have a file.")
 		tempPath := path.Join([]string{pwd, "oa_files", "article_listing.csv"}...)
 		articleListing, err := os.OpenFile(tempPath, os.O_RDWR|os.O_APPEND, 0655)
 		if err != nil {
