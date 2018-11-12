@@ -71,20 +71,20 @@ type QualifierName struct {
 }
 
 type Date struct {
-	Year   int `xml:"Year,chardata"`
-	Month  int `xml:"Month,chardata"`
-	Day    int `xml:"Day,chardata"`
-	Hour   int `xml:"Hour,chardata"`
-	Minute int `xml:"Minute,chardata"`
+	Year   string `xml:"Year,chardata"`
+	Month  string `xml:"Month,chardata"`
+	Day    string `xml:"Day,chardata"`
+	Hour   string `xml:"Hour,chardata"`
+	Minute string `xml:"Minute,chardata"`
 }
 
 type ArticleDate struct {
 	DateType string `xml:"DateType,attr"`
-	Year     int    `xml:"Year,chardata"`
-	Month    int    `xml:"Month,chardata"`
-	Day      int    `xml:"Day,chardata"`
-	Hour     int    `xml:"Hour,chardata"`
-	Minute   int    `xml:"Minute,chardata"`
+	Year     string `xml:"Year,chardata"`
+	Month    string `xml:"Month,chardata"`
+	Day      string `xml:"Day,chardata"`
+	Hour     string `xml:"Hour,chardata"`
+	Minute   string `xml:"Minute,chardata"`
 }
 
 type ISSN struct {
@@ -176,11 +176,11 @@ type PubmedData struct {
 
 type PubMedPubDate struct {
 	PubStatus string `xml:"PubStatus,attr"`
-	Year      int    `xml:"Year,chardata"`
-	Month     int    `xml:"Month,chardata"`
-	Day       int    `xml:"Day,chardata"`
-	Hour      int    `xml:"Hour,chardata"`
-	Minute    int    `xml:"Minute,chardata"`
+	Year      string `xml:"Year,chardata"`
+	Month     string `xml:"Month,chardata"`
+	Day       string `xml:"Day,chardata"`
+	Hour      string `xml:"Hour,chardata"`
+	Minute    string `xml:"Minute,chardata"`
 }
 
 type ArticleID struct {
