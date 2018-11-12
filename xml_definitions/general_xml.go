@@ -12,6 +12,8 @@ type PubmedArticle struct {
 type MedlineCitation struct {
 	Status                  string                `xml:"Status,attr"`
 	Owner                   string                `xml:"Owner,attr"`
+	PMID                    string                `xml:"PMID,chardata"`
+	PMIDVersion             string                `xml:"PMID>Version,attr"`
 	DateCompleted           Date                  `xml:"DateCompleted"`
 	DateRevised             Date                  `xml:"DateRevised"`
 	Article                 Article               `xml:"Article"`
