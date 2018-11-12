@@ -6,12 +6,12 @@ type Metadata struct {
 	Abstract        string     `json:"abstract"`
 	Identifier      Identifier `json:"identifier"`
 	Date            Date       `json:"date"`
-	License         string     `json:"license"`
-	Path            string     `json:"path"`
+	License         *string    `json:"license"`
+	Path            *string    `json:"path"`
 	EntryFile       string     `json:"entryfile"`
-	Files           []string   `json:"files"`
-	PathType        string     `json:"path-type"`
-	CompressionType string     `json:"compression-type"`
+	Files           *[]string  `json:"files"`
+	PathType        *string    `json:"path-type"`
+	CompressionType *string    `json:"compression-type"`
 }
 
 type Author struct {
