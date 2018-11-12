@@ -1,0 +1,114 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {},
+    "id": "http://example.com/example.json",
+    "properties": {
+        "abstract": {
+            "id": "/properties/abstract",
+            "type": "string"
+        },
+        "author": {
+            "id": "/properties/author",
+            "items": {
+                "id": "/properties/author/items",
+                "properties": {
+                    "given-names": {
+                        "id": "/properties/author/items/properties/given-names",
+                        "type": "string"
+                    },
+                    "surname": {
+                        "id": "/properties/author/items/properties/surname",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "given-names"
+                ],
+                "type": "object"
+            },
+            "type": "array"
+        },
+        "date": {
+            "id": "/properties/date",
+            "properties": {
+                "day": {
+                    "id": "/properties/date/properties/day",
+                    "type": "string"
+                },
+                "month": {
+                    "id": "/properties/date/properties/month",
+                    "type": "string"
+                },
+                "year": {
+                    "id": "/properties/date/properties/year",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "year",
+                "month"
+            ],
+            "type": "object"
+        },
+        "entryfile": {
+            "default": "article.xml",
+            "description": "Allows the ScienceFair reader to open the correct file for reading. Can be updated if multiple versions of the article are included.",
+            "id": "/properties/entryfile",
+            "title": "Article (XML) entry filepath relative to article path",
+            "type": "string"
+        },
+        "files": {
+            "id": "/properties/files",
+            "items": {
+                "id": "/properties/files/items",
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "identifier": {
+            "id": "/properties/identifier",
+            "items": {
+                "id": "/properties/identifier/items",
+                "properties": {
+                    "id": {
+                        "id": "/properties/identifier/items/properties/id",
+                        "type": "string"
+                    },
+                    "type": {
+                        "id": "/properties/identifier/items/properties/type",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "type",
+                    "id"
+                ],
+                "type": "object"
+            },
+            "type": "array"
+        },
+        "license": {
+            "default": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+            "description": "All shares default to CC0 public domain dedication",
+            "id": "/properties/license",
+            "title": "License URL",
+            "type": "string"
+        },
+        "path": {
+            "id": "/properties/path",
+            "type": "string"
+        },
+        "title": {
+            "id": "/properties/title",
+            "type": "string"
+        }
+    },
+    "required": [
+        "author",
+        "title",
+        "date",
+        "identifier",
+        "entryfile"
+    ],
+    "type": "object"
+}
