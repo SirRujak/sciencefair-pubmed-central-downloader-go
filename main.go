@@ -268,6 +268,11 @@ func downloadMetaDataXML(url string) (*xml_definitions.PubmedArticleSet, error) 
 }
 
 func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath string, metadataBasePath string, articleListing *os.File, emailAddress string) error {
+	// TODO: Move the code around to check that all info is good before
+	// actually saving anything. If something is bad, add it to a new file
+	// meant for tracking issue documents. Save the error that occured at the
+	// time so that it is possible to report them to PMC.
+
 	var err error
 	userInfo := "&tool=sciencefair_downloader&email=" + emailAddress
 	const metadataBaseLink = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=XML&id="
@@ -349,6 +354,9 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			// Start by filling in the defaults for this repository.
 			hashPath := path.Join(firstHash, secondHash)
 			//log.Print(articleMetadata)
+			if articleMetadata == nil {
+
+			}
 			singleArticle := *articleMetadata.PubmedArticles
 			metadataJSON, err := convertXMLToJSON(&singleArticle[0], hashPath)
 			if err != nil {
