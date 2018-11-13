@@ -312,6 +312,27 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			log.Print("Somehow there were no new articles in this file. Terminating...")
 			return err
 		}
+
+		// TODO: Change the system here.
+		// We now need to do the following things to make sure we have the right
+		// data:
+		// Go through the loop once and separate the PMCID data into 200 article
+		// chunks. Those will then be fed into this system:
+		// https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
+		// Probably with the:
+		// service-root?ids=14900&idtype=pmcid,
+		// service-root?ids=PMC1193645&versions=no,
+		// service-root?ids=PMC2883744&format=json
+		// settings so that we get it as JSON, we can send it without the PMC
+		// prefix, and so that we only get the most recent version.
+		// Go through the new list of PMID values and download their metadata in
+		// batches. The metadata search can handle 500 artilces at a time.
+		// Once this is finally complete, begin downloading and saving the
+		// actual papers and once each paper is downloaded save its metadata file
+		// and add the info to the listing.
+
+		// Current limits of 3 requests per second
+
 		for currentArticle := 0; currentArticle < numNewArticles; currentArticle++ {
 			//log.Print(update.Records.RecordList)
 			if update.Records.RecordList[currentArticle].Link.Format == "pdf" {
