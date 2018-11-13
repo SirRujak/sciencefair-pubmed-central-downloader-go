@@ -203,7 +203,7 @@ func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath stri
 	tempJSON.Abstract = xmlStruct.MedlineCitation.Article.Abstract.AbstractText
 	tempIdentifier := json_definitions.Identifier{
 		Type: "PMID",
-		ID:   xmlStruct.MedlineCitation.PMID,
+		ID:   xmlStruct.MedlineCitation.PMID.PMID,
 	}
 	tempJSON.Identifier = tempIdentifier
 	tempDate := json_definitions.Date{
