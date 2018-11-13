@@ -15,28 +15,32 @@ type PubmedArticle struct {
 type MedlineCitation struct {
 	Status                  string                `xml:"Status,attr"`
 	Owner                   string                `xml:"Owner,attr"`
-	PMID                    string                `xml:"PMID,chardata"`
-	PMIDVersion             string                `xml:"PMID>Version,attr"`
+	PMID                    PMID                  `xml:"PMID"`
 	DateCompleted           Date                  `xml:"DateCompleted"`
 	DateRevised             Date                  `xml:"DateRevised"`
 	Article                 Article               `xml:"Article"`
 	MedlineJournalInfo      MedlineJournalInfo    `xml:"MedlineJournalInfo"`
 	ChemicalList            []Chemical            `xml:"ChemicalList"`
-	CitationSubset          string                `xml:"CitationSubset,chardata"`
+	CitationSubset          string                `xml:"CitationSubset"`
 	CommentsCorrectionsList []CommentsCorrections `xml:"CommentsCorrectionsList"`
 	MeshHeadingList         []MeshHeading         `xml:"MeshHeadingList"`
 }
 
+type PMID struct {
+	PMID        string `xml:",chardata"`
+	PMIDVersion string `xml:"Version,attr"`
+}
+
 type MedlineJournalInfo struct {
-	Country   string `xml:"Country,chardata"`
-	MedlineTA string `xml:"MedlineTA,chardata"`
+	Country   string `xml:"Country"`
+	MedlineTA string `xml:"MedlineTA"`
 	// TODO: Otherwise possibly use this for journal identifier?
-	NumUniqueID int    `xml:"NumUniqueID,chardata"`
-	ISSNLinking string `xml:"ISSNLinking,chardata"`
+	NumUniqueID int    `xml:"NumUniqueID"`
+	ISSNLinking string `xml:"ISSNLinking"`
 }
 
 type Chemical struct {
-	RegistryNumber  int       `xml:"RegistryNumber,chardata"`
+	RegistryNumber  int       `xml:"RegistryNumber"`
 	NameOfSubstance Substance `xml:"NameOfSubstance"`
 }
 
@@ -47,7 +51,7 @@ type Substance struct {
 
 type CommentsCorrections struct {
 	RefType   string      `xml:"RefType,attr"`
-	RefSource string      `xml:"RefSource,chardata"`
+	RefSource string      `xml:"RefSource"`
 	PMID      CommentPMID `xml:"PMID"`
 }
 
@@ -74,20 +78,20 @@ type QualifierName struct {
 }
 
 type Date struct {
-	Year   string `xml:"Year,chardata"`
-	Month  string `xml:"Month,chardata"`
-	Day    string `xml:"Day,chardata"`
-	Hour   string `xml:"Hour,chardata"`
-	Minute string `xml:"Minute,chardata"`
+	Year   string `xml:"Year"`
+	Month  string `xml:"Month"`
+	Day    string `xml:"Day"`
+	Hour   string `xml:"Hour"`
+	Minute string `xml:"Minute"`
 }
 
 type ArticleDate struct {
 	DateType string `xml:"DateType,attr"`
-	Year     string `xml:"Year,chardata"`
-	Month    string `xml:"Month,chardata"`
-	Day      string `xml:"Day,chardata"`
-	Hour     string `xml:"Hour,chardata"`
-	Minute   string `xml:"Minute,chardata"`
+	Year     string `xml:"Year"`
+	Month    string `xml:"Month"`
+	Day      string `xml:"Day"`
+	Hour     string `xml:"Hour"`
+	Minute   string `xml:"Minute"`
 }
 
 type ISSN struct {
@@ -97,21 +101,21 @@ type ISSN struct {
 
 type JournalIssue struct {
 	CitedMedium string `xml:"CitedMedium,attr"`
-	Volume      string `xml:"Volume,chardata"`
-	Issue       string `xml:"Issue,chardata"`
+	Volume      string `xml:"Volume"`
+	Issue       string `xml:"Issue"`
 	PubDate     Date   `xml:"PubDate"`
 }
 
 type Journal struct {
 	ISSN         ISSN         `xml:"ISSN"`
 	JournalIssue JournalIssue `xml:"JournalIssue"`
-	Title        string       `xml:"Title,chardata"`
+	Title        string       `xml:"Title"`
 	// TODO: This should be what we use to split it up by publisher.
-	ISOAbbreviation string `xml:"ISOAbbreviation,chardata"`
+	ISOAbbreviation string `xml:"ISOAbbreviation"`
 }
 
 type Pagination struct {
-	MedlinePgns []string `xml:"MedlinePgn,chardata"`
+	MedlinePgns []string `xml:"MedlinePgn"`
 }
 
 type ELocationID struct {
@@ -121,18 +125,18 @@ type ELocationID struct {
 }
 
 type Abstract struct {
-	AbstractText string `xml:"AbstractText,chardata"`
+	AbstractText string `xml:"AbstractText"`
 }
 
 type AffiliationInfo struct {
-	Affiliation []string `xml:"Affiliation,chardata"`
+	Affiliation []string `xml:"Affiliation"`
 }
 
 type Author struct {
 	ValidYN         string          `xml:"ValidYN,attr"`
-	LastName        string          `xml:"LastName,chardata"`
-	ForeName        string          `xml:"ForeName,chardata"`
-	Initials        string          `xml:"Initials,chardata"`
+	LastName        string          `xml:"LastName"`
+	ForeName        string          `xml:"ForeName"`
+	Initials        string          `xml:"Initials"`
 	AffiliationInfo AffiliationInfo `xml:"AffiliationInfo"`
 }
 
@@ -142,9 +146,9 @@ type AuthorList struct {
 }
 
 type Grant struct {
-	GrantID string `xml:"GrantID,chardata"`
-	Agency  string `xml:"Agency,chardata"`
-	Country string `xml:"Country,chardata"`
+	GrantID string `xml:"GrantID"`
+	Agency  string `xml:"Agency"`
+	Country string `xml:"Country"`
 }
 
 type GrantList struct {
@@ -160,12 +164,12 @@ type PublicationType struct {
 type Article struct {
 	PubModel            string            `xml:"PubModel,attr"`
 	Journal             Journal           `xml:"Journal"`
-	ArticleTitle        string            `xml:"ArticleTitle,chardata"`
+	ArticleTitle        string            `xml:"ArticleTitle"`
 	Pagination          Pagination        `xml:"Pagination"`
 	ELocationID         ELocationID       `xml:"ELocationID"`
 	Abstract            Abstract          `xml:"Abstract"`
 	AuthorList          AuthorList        `xml:"AuthorList"`
-	Language            string            `xml:"Language,chardata"`
+	Language            string            `xml:"Language"`
 	GrantList           GrantList         `xml:"GrantList"`
 	PublicationTypeList []PublicationType `xml:"PublicationType"`
 	ArticleDate         ArticleDate       `xml:"ArticleDate"`
@@ -173,17 +177,17 @@ type Article struct {
 
 type PubmedData struct {
 	History           []PubMedPubDate `xml:"History"`
-	PublicationStatus string          `xml:"PublicationStatus,chardata"`
+	PublicationStatus string          `xml:"PublicationStatus"`
 	ArticleIDList     []ArticleID     `xml:"ArticleIDList"`
 }
 
 type PubMedPubDate struct {
 	PubStatus string `xml:"PubStatus,attr"`
-	Year      string `xml:"Year,chardata"`
-	Month     string `xml:"Month,chardata"`
-	Day       string `xml:"Day,chardata"`
-	Hour      string `xml:"Hour,chardata"`
-	Minute    string `xml:"Minute,chardata"`
+	Year      string `xml:"Year"`
+	Month     string `xml:"Month"`
+	Day       string `xml:"Day"`
+	Hour      string `xml:"Hour"`
+	Minute    string `xml:"Minute"`
 }
 
 type ArticleID struct {
