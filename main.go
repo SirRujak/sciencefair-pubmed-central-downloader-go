@@ -56,7 +56,7 @@ func downloadXML(url string) error {
 }
 
 func downloadUpdateXML(url string) ([]byte, error) {
-	log.Print(url)
+	//log.Print(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -227,10 +227,10 @@ func downloadArticle(url string, destination string) error {
 	// Download the article at url and extract it to destination.
 	tempURL := url + "?archinve=false"
 	os.MkdirAll(destination, 0655)
-	log.Print("Destination: " + destination)
+	//log.Print("Destination: " + destination)
 	err := getter.Get(destination, tempURL)
 	if err == nil {
-		log.Print("Downloaded " + url)
+		//log.Print("Downloaded " + url)
 	} else {
 		log.Print("Error downloading article. See error below:")
 	}
@@ -245,7 +245,7 @@ func downloadMetaDataXML(url string) (*xml_definitions.PubmedArticleSet, error) 
 	}
 
 	defer urlResponse.Body.Close()
-	log.Print(url)
+	//log.Print(url)
 
 	// Read the data to a []char.
 	dataString, err := ioutil.ReadAll(urlResponse.Body)
@@ -262,7 +262,7 @@ func downloadMetaDataXML(url string) (*xml_definitions.PubmedArticleSet, error) 
 		log.Print(err)
 		return nil, err
 	}
-	log.Print(pubMedMetadata)
+	//log.Print(pubMedMetadata)
 
 	return &pubMedMetadata, nil
 }
@@ -316,7 +316,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			// Process the link to find the hashed directory names.
 			articleList := strings.SplitN(articleLinkFtp, "/", 3)
 			metadataPMID := strings.Split(strings.Split(articleLinkFtp, "PMC")[1], ".")[0]
-			log.Print(articleList)
+			//log.Print(articleList)
 			articleLinkHTTP := "http://" + articleList[2]
 			articleListHashes := strings.Split(articleList[2], "/")
 			firstHash := articleListHashes[4]
@@ -348,7 +348,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			// Convert the downloaded data to the sciencefair JSON format.
 			// Start by filling in the defaults for this repository.
 			hashPath := path.Join(firstHash, secondHash)
-			log.Print(articleMetadata)
+			//log.Print(articleMetadata)
 			singleArticle := *articleMetadata.PubmedArticles
 			metadataJSON, err := convertXMLToJSON(&singleArticle[0], hashPath)
 			if err != nil {
@@ -384,7 +384,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 				return err
 			}
 
-			// TODO: Save the following to articleListing:
+			// Save the following to articleListing:
 			// key, value1, value2 sets on each line of
 			// KEY = ARTICLE_IDENTIFIER (PMID)
 			// VALUE1 = PATH_TO_ARTICLE (Same path as articlePath)
@@ -411,7 +411,7 @@ func main() {
 	oafilesPath := path.Join(pwd, "oa_files")
 	configPath := path.Join(pwd, "config.json")
 	articleListingPath := path.Join(oafilesPath, "article_listing.csv")
-	log.Print(articleListingPath)
+	//log.Print(articleListingPath)
 	//var firstRun bool
 	//firstRun = false
 	var err error
@@ -456,7 +456,7 @@ func main() {
 	if len(files) <= 0 {
 		// Download new file.
 		//os.MkdirAll(path, perm)
-		log.Print(articleListingPath)
+		//log.Print(articleListingPath)
 		articleListing, err := os.OpenFile(articleListingPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0655)
 		if err != nil {
 			log.Print("Issue opening or creating article listing file. Permission error?")
