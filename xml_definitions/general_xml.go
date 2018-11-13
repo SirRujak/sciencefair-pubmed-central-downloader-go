@@ -1,7 +1,10 @@
 package xml_definitions
 
+import "encoding/xml"
+
 type PubmedArticleSet struct {
-	PubmedArticles *[]PubmedArticle `xml:"PubmedArticleSet"`
+	XMLName        xml.Name         `xml:"PubmedArticleSet"`
+	PubmedArticles *[]PubmedArticle `xml:"PubmedArticle"`
 }
 
 type PubmedArticle struct {

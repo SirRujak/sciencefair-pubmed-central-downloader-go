@@ -254,8 +254,6 @@ func downloadMetaDataXML(url string) (*xml_definitions.PubmedArticleSet, error) 
 		return nil, err
 	}
 
-	log.Print(dataString)
-
 	// Parse the XML data.
 	pubMedMetadata := xml_definitions.PubmedArticleSet{}
 	err = xml.Unmarshal(dataString, &pubMedMetadata)
