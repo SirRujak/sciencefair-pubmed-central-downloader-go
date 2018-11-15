@@ -299,11 +299,7 @@ func downloadIDXML(url string) (*xml_definitions.PCMIDSet, error) {
 	return &pubMedMetadata, nil
 }
 
-func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath string, metadataBasePath string, articleListing *os.File, emailAddress string) error {
-	// TODO: Move the code around to check that all info is good before
-	// actually saving anything. If something is bad, add it to a new file
-	// meant for tracking issue documents. Save the error that occured at the
-	// time so that it is possible to report them to PMC.
+func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath string, metadataBasePath string, articleListing *os.File, emailAddress string, badArticleListing *os.File) error {
 
 	var err error
 	userInfo := "&tool=sciencefair_downloader&email=" + emailAddress
@@ -348,7 +344,6 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			return err
 		}
 
-		// TODO: Change the system here.
 		// We now need to do the following things to make sure we have the right
 		// data:
 		// Go through the loop once and separate the PMCID data into 200 article
@@ -430,8 +425,13 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			tempRecords := articlePMIDData.Records
 			for i := 0; i < len(tempRecords); i++ {
 				if tempRecords[i].PMID == "" {
-					log.Print(tempRecords[i])
+					//log.Print(tempRecords[i])
 					badPMCIDList = append(badPMCIDList, tempRecords[i].PMCID)
+					_, err := badArticleListing.WriteString(tempRecords[i].PMCID)
+					if err != nil {
+						log.Print("Issue getting metadata of and saving reference to: " + tempRecords[i].PMCID)
+						continue
+					}
 				} else {
 					finalPMCIDList = append(finalPMCIDList, tempRecords[i].PMCID)
 					finalPMCRecordList = append(finalPMCRecordList, currentBatch[i])
@@ -602,6 +602,7 @@ func main() {
 	oafilesPath := path.Join(pwd, "oa_files")
 	configPath := path.Join(pwd, "config.json")
 	articleListingPath := path.Join(oafilesPath, "article_listing.csv")
+	badArticleListingPath := path.Join(oafilesPath, "article_listing.csv")
 	//log.Print(articleListingPath)
 	//var firstRun bool
 	//firstRun = false
@@ -655,6 +656,13 @@ func main() {
 		}
 		defer articleListing.Close()
 
+		badArticleListing, err := os.OpenFile(badArticleListingPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0655)
+		if err != nil {
+			log.Print("Issue opening or creating article listing file. Permission error?")
+			panic(err)
+		}
+		defer badArticleListing.Close()
+
 		log.Print("Downloading because we do not yet have a file.")
 		/*
 			err = downloadXML(initialURL)
@@ -663,7 +671,7 @@ func main() {
 				return
 			}
 		*/
-		err = downloadArticles(lastTime, updateURLBase, articleBasePath, metadataBasePath, articleListing, emailAddress)
+		err = downloadArticles(lastTime, updateURLBase, articleBasePath, metadataBasePath, articleListing, emailAddress, badArticleListing)
 		panic(err)
 	} else if currentTime.Unix() > lastTime.Add(24*time.Hour).Unix() {
 		// NEW STUFF
@@ -674,11 +682,21 @@ func main() {
 			panic(err)
 		}
 		defer articleListing.Close()
+
+		badArticleListing, err := os.OpenFile(badArticleListingPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0655)
+		if err != nil {
+			log.Print("Issue opening or creating article listing file. Permission error?")
+			panic(err)
+		}
+		defer badArticleListing.Close()
+
 		log.Print("Downloading because it has been more than 24 hours since last update.")
-		err = downloadArticles(lastTime, updateURLBase, articleBasePath, metadataBasePath, articleListing, emailAddress)
+		err = downloadArticles(lastTime, updateURLBase, articleBasePath, metadataBasePath, articleListing, emailAddress, badArticleListing)
 		if err != nil {
 			panic(err)
 		} else {
+			// TODO: Save the time this was started into the json file so that we
+			// can continue.
 			log.Print("Update complete!")
 		}
 	} else {
