@@ -466,7 +466,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			currentBatchPMIDs := PMIDBatches[PMIDBatch]
 			metadataPMID := strings.Join(currentBatchPMIDs[:], ",")
 			metaDataURL := metadataBaseLink + metadataPMID + userInfo
-			log.Print("test1")
+			//log.Print("test1")
 			articleMetadata, err := downloadMetaDataXML(metaDataURL)
 			if err != nil {
 				return err
