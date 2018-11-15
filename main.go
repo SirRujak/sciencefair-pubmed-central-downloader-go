@@ -253,12 +253,44 @@ func downloadMetaDataXML(url string) (*xml_definitions.PubmedArticleSet, error) 
 		log.Print("Error reading the metadata file.")
 		return nil, err
 	}
-
 	// Parse the XML data.
 	pubMedMetadata := xml_definitions.PubmedArticleSet{}
 	err = xml.Unmarshal(dataString, &pubMedMetadata)
 	if err != nil {
+		//log.Print(pubMedMetadata)
+		log.Print(url)
 		log.Print("issue unmarshalling xml metadata")
+		log.Print(err)
+		log.Print(dataString)
+		return nil, err
+	}
+	//log.Print(pubMedMetadata)
+
+	return &pubMedMetadata, nil
+}
+
+func downloadIDXML(url string) (*xml_definitions.PCMIDSet, error) {
+	// Download the data.
+	urlResponse, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	defer urlResponse.Body.Close()
+	//log.Print(url)
+
+	// Read the data to a []char.
+	dataString, err := ioutil.ReadAll(urlResponse.Body)
+	if err != nil {
+		log.Print("Error reading the metadata file.")
+		return nil, err
+	}
+
+	// Parse the XML data.
+	pubMedMetadata := xml_definitions.PCMIDSet{}
+	err = xml.Unmarshal(dataString, &pubMedMetadata)
+	if err != nil {
+		log.Print("issue unmarshalling id metadata")
 		log.Print(err)
 		return nil, err
 	}
@@ -276,9 +308,12 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 	var err error
 	userInfo := "&tool=sciencefair_downloader&email=" + emailAddress
 	const metadataBaseLink = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=XML&id="
+	const pmcidBaseLink = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?versions=no&idtype=pmcid&ids="
 	lastTimeFormatted := lastTime.Format("2006-01-02+15:04:05")
+	log.Print("lastTime=" + lastTimeFormatted)
 	formatURL := "&format=tgz"
 	fullUpdateURL := updateURLBase + lastTimeFormatted + formatURL
+	log.Print(fullUpdateURL)
 	// If there is anything in the article list download them.
 	// Continue until the resumption link is nil.
 	var updateComplete = false
@@ -320,28 +355,143 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 		// chunks. Those will then be fed into this system:
 		// https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
 		// Probably with the:
-		// service-root?ids=14900&idtype=pmcid,
 		// service-root?ids=PMC1193645&versions=no,
 		// service-root?ids=PMC2883744&format=json
-		// settings so that we get it as JSON, we can send it without the PMC
-		// prefix, and so that we only get the most recent version.
+		// settings so that we get it as JSON, and so that we only get the most
+		// recent version.
 		// Go through the new list of PMID values and download their metadata in
 		// batches. The metadata search can handle 500 artilces at a time.
 		// Once this is finally complete, begin downloading and saving the
 		// actual papers and once each paper is downloaded save its metadata file
 		// and add the info to the listing.
 
-		// Current limits of 3 requests per second
+		// Current limits of 3 requests per second.
+		PMCIDList := []record{}
+		// Create a slice of record structs.
+		for PMCID := 0; PMCID < numNewArticles; PMCID++ {
+			if update.Records.RecordList[PMCID].Link.Format == "pdf" {
+				continue
+			}
+
+			// This means it is not a pdf entry.
+			PMCIDList = append(PMCIDList, update.Records.RecordList[PMCID])
+		}
+
+		// Make a copy of the slice  and then make batches of it.
+		copyPMCIDList := make([]record, len(PMCIDList))
+		copy(copyPMCIDList, PMCIDList)
+		var numBatches int = len(PMCIDList) / 200.0
+
+		PMCIDBatches := [][]record{}
+		var singleBatch []record
+
+		// Deal with all but the last batch.
+		if numBatches > 1 {
+			for i := 0; i < numBatches-1; i++ {
+				singleBatch, copyPMCIDList = copyPMCIDList[:200], copyPMCIDList[200:]
+				PMCIDBatches = append(PMCIDBatches, singleBatch)
+			}
+		}
+		// Deal with the last batch.
+		PMCIDBatches = append(PMCIDBatches, copyPMCIDList)
+		//log.Print(PMCIDBatches)
+
+		// Step through batches and download the ID conversion data and links.
+		// If there is an issue with the ID conversion data, don't download it and
+		// add it to the badPMCIDList.
+		// Otherwise, add the PMCID to finalPMCIDList, the record struct to
+		// finalPMCRecordList the ID conversion
+		// data to fullPMIDList, the PMID to totalPMIDList, and the PMID
+		// to totalPMIDList.
+
+		totalPMIDList := make([]string, 0)
+		fullPMIDList := make([]xml_definitions.Record, 0)
+
+		finalPMCIDList := make([]string, 0)
+		finalPMCRecordList := make([]record, 0)
+		badPMCIDList := make([]string, 0)
+
+		for PMCIDBatch := 0; PMCIDBatch < len(PMCIDBatches); PMCIDBatch++ {
+			currentBatch := PMCIDBatches[PMCIDBatch]
+			PMCIDString := []string{}
+			for i := 0; i < len(currentBatch); i++ {
+				PMCIDString = append(PMCIDString, currentBatch[i].ID)
+			}
+			metadataPCMID := strings.Join(PMCIDString[:], ",")
+
+			// Download the PCMIDSet data.
+			pmidDataURL := pmcidBaseLink + metadataPCMID + userInfo
+			articlePMIDData, err := downloadIDXML(pmidDataURL)
+			//log.Print(articlePMIDData)
+			if err != nil {
+				return err
+			}
+
+			tempRecords := articlePMIDData.Records
+			for i := 0; i < len(tempRecords); i++ {
+				if tempRecords[i].PMID == "" {
+					log.Print(tempRecords[i])
+					badPMCIDList = append(badPMCIDList, tempRecords[i].PMCID)
+				} else {
+					finalPMCIDList = append(finalPMCIDList, tempRecords[i].PMCID)
+					finalPMCRecordList = append(finalPMCRecordList, currentBatch[i])
+					fullPMIDList = append(fullPMIDList, tempRecords[i])
+					totalPMIDList = append(totalPMIDList, tempRecords[i].PMID)
+
+				}
+			}
+		}
+
+		copyTotalPMIDList := make([]string, len(totalPMIDList))
+		copy(copyTotalPMIDList, totalPMIDList)
+		numBatches = len(totalPMIDList) / 200.0
+
+		PMIDBatches := [][]string{}
+		var singlePMIDBatch []string
+		// Deal with all but the last batch.
+		if numBatches > 1 {
+			for i := 0; i < numBatches-1; i++ {
+				singlePMIDBatch, copyTotalPMIDList = copyTotalPMIDList[:200], copyTotalPMIDList[200:]
+				PMIDBatches = append(PMIDBatches, singlePMIDBatch)
+			}
+		}
+		// Deal with the last batch.
+		PMIDBatches = append(PMIDBatches, copyTotalPMIDList)
+
+		// Step through batches and download the metadata an links.
+		totalPubmedArticleList := make([]*xml_definitions.PubmedArticle, 0)
+
+		for PMIDBatch := 0; PMIDBatch < len(PMIDBatches); PMIDBatch++ {
+			// Download metadata.
+			currentBatchPMIDs := PMIDBatches[PMIDBatch]
+			metadataPMID := strings.Join(currentBatchPMIDs[:], ",")
+			metaDataURL := metadataBaseLink + metadataPMID + userInfo
+			log.Print("test1")
+			articleMetadata, err := downloadMetaDataXML(metaDataURL)
+			if err != nil {
+				return err
+			}
+			pubmedArticleList := *articleMetadata.PubmedArticles
+			for tempArticle := 0; tempArticle < len(pubmedArticleList); tempArticle++ {
+				totalPubmedArticleList = append(totalPubmedArticleList, &pubmedArticleList[tempArticle])
+			}
+		}
+
+		numNewArticles = len(finalPMCIDList)
 
 		for currentArticle := 0; currentArticle < numNewArticles; currentArticle++ {
 			//log.Print(update.Records.RecordList)
-			if update.Records.RecordList[currentArticle].Link.Format == "pdf" {
-				continue
-			}
-			articleLinkFtp := update.Records.RecordList[currentArticle].Link.Href
+			/*
+				if update.Records.RecordList[currentArticle].Link.Format == "pdf" {
+					continue
+				}
+				articleLinkFtp := update.Records.RecordList[currentArticle].Link.Href
+			*/
+			articleLinkFtp := finalPMCRecordList[currentArticle].Link.Href
 			// Process the link to find the hashed directory names.
 			articleList := strings.SplitN(articleLinkFtp, "/", 3)
-			metadataPMID := strings.Split(strings.Split(articleLinkFtp, "PMC")[1], ".")[0]
+			// No longer need this next line since we download everything above.
+			//metadataPMID := strings.Split(strings.Split(articleLinkFtp, "PMC")[1], ".")[0]
 			//log.Print(articleList)
 			articleLinkHTTP := "http://" + articleList[2]
 			articleListHashes := strings.Split(articleList[2], "/")
@@ -365,21 +515,26 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			// Specifically:
 			// https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=PMID
 			// Where PMID is the PMID of the article.
-			metaDataURL := metadataBaseLink + metadataPMID + userInfo
-			articleMetadata, err := downloadMetaDataXML(metaDataURL)
-			if err != nil {
-				return err
-			}
 
-			// Convert the downloaded data to the sciencefair JSON format.
-			// Start by filling in the defaults for this repository.
 			hashPath := path.Join(firstHash, secondHash)
-			//log.Print(articleMetadata)
-			if articleMetadata == nil {
+			/*
+				// No longer use this because we downloaded this information before.
+				metaDataURL := metadataBaseLink + metadataPMID + userInfo
+				articleMetadata, err := downloadMetaDataXML(metaDataURL)
+				if err != nil {
+					return err
+				}
 
-			}
-			singleArticle := *articleMetadata.PubmedArticles
-			metadataJSON, err := convertXMLToJSON(&singleArticle[0], hashPath)
+				// Convert the downloaded data to the sciencefair JSON format.
+				// Start by filling in the defaults for this repository.
+				//log.Print(articleMetadata)
+				if articleMetadata == nil {
+
+				}
+				singleArticle := *articleMetadata.PubmedArticles
+			*/
+			singleArticle := totalPubmedArticleList[currentArticle]
+			metadataJSON, err := convertXMLToJSON(singleArticle, hashPath)
 			if err != nil {
 				log.Print("issue converting xml to json")
 				return err
@@ -418,7 +573,14 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			// KEY = ARTICLE_IDENTIFIER (PMID)
 			// VALUE1 = PATH_TO_ARTICLE (Same path as articlePath)
 			// VALUE2 = TIME_OF_ARTICLE_UPDATE (Found in the article metadata.)
-			csvData := metadataJSON.Identifier.ID + "," + firstHash + "/" + secondHash + "," + metadataJSON.Date.Year + metadataJSON.Date.Month + metadataJSON.Date.Day + "\n"
+			// VALUE3 = PMCID
+			// VALUE4 = DOI
+			csvData := metadataJSON.Identifier.ID + "," + firstHash +
+				"/" + secondHash + "," + metadataJSON.Date.Year +
+				metadataJSON.Date.Month + metadataJSON.Date.Day + "," +
+				fullPMIDList[currentArticle].PMCID + "," +
+				fullPMIDList[currentArticle].DOI +
+				"\n"
 			_, err = articleListing.WriteString(csvData)
 			if err != nil {
 				log.Print("issue writing to csv index")
@@ -515,9 +677,9 @@ func main() {
 		log.Print("Downloading because it has been more than 24 hours since last update.")
 		err = downloadArticles(lastTime, updateURLBase, articleBasePath, metadataBasePath, articleListing, emailAddress)
 		if err != nil {
-			log.Print("Update complete!")
-		} else {
 			panic(err)
+		} else {
+			log.Print("Update complete!")
 		}
 	} else {
 		log.Print("No changes detected. Exiting...")
