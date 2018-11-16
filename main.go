@@ -427,7 +427,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 				if tempRecords[i].PMID == "" {
 					//log.Print(tempRecords[i])
 					badPMCIDList = append(badPMCIDList, tempRecords[i].PMCID)
-					_, err := badArticleListing.WriteString(tempRecords[i].PMCID)
+					_, err := badArticleListing.WriteString(tempRecords[i].PMCID + "\n")
 					if err != nil {
 						log.Print("Issue getting metadata of and saving reference to: " + tempRecords[i].PMCID)
 						continue
@@ -602,7 +602,7 @@ func main() {
 	oafilesPath := path.Join(pwd, "oa_files")
 	configPath := path.Join(pwd, "config.json")
 	articleListingPath := path.Join(oafilesPath, "article_listing.csv")
-	badArticleListingPath := path.Join(oafilesPath, "article_listing.csv")
+	badArticleListingPath := path.Join(oafilesPath, "bad_article_listing.csv")
 	//log.Print(articleListingPath)
 	//var firstRun bool
 	//firstRun = false
