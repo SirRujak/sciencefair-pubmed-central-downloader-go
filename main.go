@@ -176,7 +176,7 @@ type databaseUpdate struct {
 	Records      records `xml:"records"`
 }
 
-func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath string) (*json_definitions.Metadata, error) {
+func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath string, doi *string) (*json_definitions.Metadata, error) {
 
 	pathType := "/"
 	compressionType := "tgz"
@@ -202,10 +202,17 @@ func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath stri
 	tempJSON.Title = xmlStruct.MedlineCitation.Article.ArticleTitle
 	tempJSON.Abstract = xmlStruct.MedlineCitation.Article.Abstract.AbstractText
 	tempIdentifier := json_definitions.Identifier{
-		Type: "PMID",
+		Type: "pmid",
 		ID:   xmlStruct.MedlineCitation.PMID.PMID,
 	}
-	tempJSON.Identifier = tempIdentifier
+	tempJSON.Identifier = append(tempJSON.Identifier, tempIdentifier)
+	if doi != nil {
+		tempDOI := json_definitions.Identifier{
+			Type: "doi",
+			ID:   *doi,
+		}
+		tempJSON.Identifier = append(tempJSON.Identifier, tempDOI)
+	}
 	tempDate := json_definitions.Date{
 		Day:   xmlStruct.MedlineCitation.DateRevised.Day,
 		Month: xmlStruct.MedlineCitation.DateRevised.Month,
@@ -534,7 +541,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 				singleArticle := *articleMetadata.PubmedArticles
 			*/
 			singleArticle := totalPubmedArticleList[currentArticle]
-			metadataJSON, err := convertXMLToJSON(singleArticle, hashPath)
+			metadataJSON, err := convertXMLToJSON(singleArticle, hashPath, &fullPMIDList[currentArticle].DOI)
 			if err != nil {
 				log.Print("issue converting xml to json")
 				return err
@@ -561,7 +568,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 				return err
 			}
 
-			metadataFileName := path.Join(metadataPath, "PubMedCentral-"+metadataJSON.Identifier.ID+"-v2.json")
+			metadataFileName := path.Join(metadataPath, "PubMedCentral-"+metadataJSON.Identifier[0].ID+"-v2.json")
 			err = ioutil.WriteFile(metadataFileName, metadataString, 0655)
 			if err != nil {
 				log.Print("issue saving metadata json file")
@@ -575,7 +582,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			// VALUE2 = TIME_OF_ARTICLE_UPDATE (Found in the article metadata.)
 			// VALUE3 = PMCID
 			// VALUE4 = DOI
-			csvData := metadataJSON.Identifier.ID + "," + firstHash +
+			csvData := metadataJSON.Identifier[0].ID + "," + firstHash +
 				"/" + secondHash + "," + metadataJSON.Date.Year +
 				metadataJSON.Date.Month + metadataJSON.Date.Day + "," +
 				fullPMIDList[currentArticle].PMCID + "," +
