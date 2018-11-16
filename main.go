@@ -232,7 +232,7 @@ func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath stri
 
 func downloadArticle(url string, destination string) error {
 	// Download the article at url and extract it to destination.
-	tempURL := url + "?archinve=false"
+	tempURL := url + "?archive=false"
 	os.MkdirAll(destination, 0655)
 	//log.Print("Destination: " + destination)
 	err := getter.Get(destination, tempURL)
