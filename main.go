@@ -176,7 +176,7 @@ type databaseUpdate struct {
 	Records      records `xml:"records"`
 }
 
-func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath string, doi *string) (*json_definitions.Metadata, error) {
+func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath string, doi *string, pmcid string) (*json_definitions.Metadata, error) {
 
 	pathType := "/"
 	compressionType := "tgz"
@@ -213,6 +213,11 @@ func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath stri
 		}
 		tempJSON.Identifier = append(tempJSON.Identifier, tempDOI)
 	}
+	tempPMCID := json_definitions.Identifier{
+		Type: "pmcid",
+		ID:   pmcid,
+	}
+	tempJSON.Identifier = append(tempJSON.Identifier, tempPMCID)
 	tempDate := json_definitions.Date{
 		Day:   xmlStruct.MedlineCitation.DateRevised.Day,
 		Month: xmlStruct.MedlineCitation.DateRevised.Month,
@@ -232,7 +237,7 @@ func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath stri
 
 func downloadArticle(url string, destination string) error {
 	// Download the article at url and extract it to destination.
-	tempURL := url + "?archive=false"
+	tempURL := url + "?archnive=false"
 	os.MkdirAll(destination, 0655)
 	//log.Print("Destination: " + destination)
 	err := getter.Get(destination, tempURL)
@@ -382,7 +387,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 		// Make a copy of the slice  and then make batches of it.
 		copyPMCIDList := make([]record, len(PMCIDList))
 		copy(copyPMCIDList, PMCIDList)
-		var numBatches int = len(PMCIDList) / 200.0
+		var numBatches = len(PMCIDList) / 200.0
 
 		PMCIDBatches := [][]record{}
 		var singleBatch []record
@@ -423,7 +428,8 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 
 			// Download the PCMIDSet data.
 			pmidDataURL := pmcidBaseLink + metadataPCMID + userInfo
-			articlePMIDData, err := downloadIDXML(pmidDataURL)
+			var articlePMIDData *xml_definitions.PCMIDSet
+			articlePMIDData, err = downloadIDXML(pmidDataURL)
 			//log.Print(articlePMIDData)
 			if err != nil {
 				return err
@@ -434,7 +440,15 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 				if tempRecords[i].PMID == "" {
 					//log.Print(tempRecords[i])
 					badPMCIDList = append(badPMCIDList, tempRecords[i].PMCID)
-					_, err := badArticleListing.WriteString(tempRecords[i].PMCID + "\n")
+					_, err = badArticleListing.WriteString(tempRecords[i].PMCID + "," + "PMIDError" + "\n")
+					if err != nil {
+						log.Print("Issue getting metadata of and saving reference to: " + tempRecords[i].PMCID)
+						continue
+					}
+				} else if tempRecords[i].DOI == "" {
+					//log.Print(tempRecords[i])
+					badPMCIDList = append(badPMCIDList, tempRecords[i].PMCID)
+					_, err = badArticleListing.WriteString(tempRecords[i].PMCID + "," + "DOIError" + "\n")
 					if err != nil {
 						log.Print("Issue getting metadata of and saving reference to: " + tempRecords[i].PMCID)
 						continue
@@ -474,7 +488,8 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 			metadataPMID := strings.Join(currentBatchPMIDs[:], ",")
 			metaDataURL := metadataBaseLink + metadataPMID + userInfo
 			//log.Print("test1")
-			articleMetadata, err := downloadMetaDataXML(metaDataURL)
+			var articleMetadata *xml_definitions.PubmedArticleSet
+			articleMetadata, err = downloadMetaDataXML(metaDataURL)
 			if err != nil {
 				return err
 			}
@@ -541,7 +556,7 @@ func downloadArticles(lastTime time.Time, updateURLBase string, articleBasePath 
 				singleArticle := *articleMetadata.PubmedArticles
 			*/
 			singleArticle := totalPubmedArticleList[currentArticle]
-			metadataJSON, err := convertXMLToJSON(singleArticle, hashPath, &fullPMIDList[currentArticle].DOI)
+			metadataJSON, err := convertXMLToJSON(singleArticle, hashPath, &fullPMIDList[currentArticle].DOI, finalPMCIDList[currentArticle])
 			if err != nil {
 				log.Print("issue converting xml to json")
 				return err
@@ -679,7 +694,12 @@ func main() {
 			}
 		*/
 		err = downloadArticles(lastTime, updateURLBase, articleBasePath, metadataBasePath, articleListing, emailAddress, badArticleListing)
-		panic(err)
+		if err != nil {
+			panic(err)
+		} else {
+			log.Print("No errors!")
+			return
+		}
 	} else if currentTime.Unix() > lastTime.Add(24*time.Hour).Unix() {
 		// NEW STUFF
 		tempPath := path.Join([]string{pwd, "oa_files", "article_listing.csv"}...)
