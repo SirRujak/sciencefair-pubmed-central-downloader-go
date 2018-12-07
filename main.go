@@ -219,9 +219,9 @@ func convertXMLToJSON(xmlStruct *xml_definitions.PubmedArticle, articlePath stri
 	}
 	tempJSON.Identifier = append(tempJSON.Identifier, tempPMCID)
 	tempDate := json_definitions.Date{
-		Day:   xmlStruct.MedlineCitation.DateRevised.Day,
-		Month: xmlStruct.MedlineCitation.DateRevised.Month,
-		Year:  xmlStruct.MedlineCitation.DateRevised.Year,
+		Day:   xmlStruct.MedlineCitation.DateCompleted.Day,
+		Month: xmlStruct.MedlineCitation.DateCompleted.Month,
+		Year:  xmlStruct.MedlineCitation.DateCompleted.Year,
 	}
 	tempJSON.Date = tempDate
 	for author := 0; author < len(xmlStruct.MedlineCitation.Article.AuthorList.Authors); author++ {
